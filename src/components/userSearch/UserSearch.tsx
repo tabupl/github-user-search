@@ -16,9 +16,11 @@ const UserSearch = (): JSX.Element => {
   const [users, setUsers] = useState<TableUser[]>([])
   const [currentPage, setCurrentPage] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [showError, setShowError] = useState<boolean>(false)
 
-  const debounceSearchUsers = debounce((value: string, page: number) =>
-    searchUsers(value, page, ITEMS_PER_PAGE)
+  const debounceSearchUsers = debounce((value: string, page: number) => {
+    setShowError(false)
+    return searchUsers(value, page, ITEMS_PER_PAGE)
       .then((res) => {
         setMaxUsers(res.total_count)
         return res.items
@@ -28,8 +30,11 @@ const UserSearch = (): JSX.Element => {
           setUsers(res.map(getTableUserFromGithubUser))
           setIsLoading(false)
         }),
-      ),
-  )
+      )
+      .catch(() => {
+        setShowError(true)
+      })
+  })
 
   const onSearchUsers = useCallback(
     (value: string, page: number) => debounceSearchUsers(value, page),
@@ -54,6 +59,11 @@ const UserSearch = (): JSX.Element => {
 
   return (
     <div className='w-75 mx-auto'>
+      {showError && (
+        <h5 className='p-2 bg-danger text-white'>
+          Something went wrong, please try to search again
+        </h5>
+      )}
       <div className='d-flex justify-content-between'>
         <SearchBar onValueChange={onTyping} value={searchValue} />
         {(!!searchValue.length || !!users.length) && (
